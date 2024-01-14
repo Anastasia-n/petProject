@@ -11,6 +11,7 @@ create table comment
     news_idfk  bigint                                             not null
         constraint news_idfk
             references news
+            on delete cascade
 );
 
 alter table comment

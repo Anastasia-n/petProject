@@ -37,7 +37,7 @@ public class News {
     @ManyToOne(fetch = FetchType.LAZY)
     private Users userIdFK;
 
-    @OneToMany(fetch = FetchType.LAZY, mappedBy = "newsIdFk")
+    @OneToMany(cascade = CascadeType.REMOVE, fetch = FetchType.LAZY, mappedBy = "newsIdFk")
     private List<Comment> commentList;
 
     public List<Comment> getCommentList() {

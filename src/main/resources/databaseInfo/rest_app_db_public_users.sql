@@ -9,8 +9,6 @@ create table users
     password varchar(45)                                      not null,
     role     varchar(10),
     email    varchar(45)                                      not null
-        constraint email
-            unique
 );
 
 alter table users
