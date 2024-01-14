@@ -1,11 +1,8 @@
 package ru.anastasia.spring.RestApp.dto;
 
-
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
-import org.springframework.data.annotation.Id;
-import ru.anastasia.spring.RestApp.models.Role;
 
 public class UsersDTO {
 
@@ -14,12 +11,22 @@ public class UsersDTO {
     private String login;
 
     @NotEmpty(message = "Пароль не должен быть пустым")
-    @Size(min = 5, max = 45)
+    @Size(min = 5, max = 255)
     private String password;
 
     @NotEmpty
     @Email
     private String email;
+
+    private Long id;
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
 
     public String getLogin() {
         return login;

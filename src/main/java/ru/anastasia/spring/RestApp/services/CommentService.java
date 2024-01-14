@@ -8,25 +8,28 @@ import ru.anastasia.spring.RestApp.exception.news.NewsNotFoundException;
 import ru.anastasia.spring.RestApp.models.Comment;
 import ru.anastasia.spring.RestApp.repositories.CommentRepository;
 import ru.anastasia.spring.RestApp.repositories.NewsRepository;
+import ru.anastasia.spring.RestApp.repositories.UsersRepository;
 
 @Service
 @Transactional
 public class CommentService {
     final CommentRepository commentRepository;
     final NewsRepository newsRepository;
+    final UsersRepository usersRepository;
 
-    public CommentService(CommentRepository commentRepository, NewsRepository newsRepository) {
+    public CommentService(CommentRepository commentRepository, NewsRepository newsRepository, UsersRepository usersRepository) {
         this.commentRepository = commentRepository;
         this.newsRepository = newsRepository;
+        this.usersRepository = usersRepository;
     }
 
     public Comment getCommentById (Long id){
         return commentRepository.findById(id).orElseThrow(CommentNotFoundException::new);
     }
 
-    public void saveComment(Comment comment, Long newsId){
+    public void saveComment(Comment comment, Long newsId, String login){
         comment.setNewsIdFk(newsRepository.findById(newsId).orElseThrow(NewsNotFoundException::new));
-        comment.setUsersIdFK(null); // !!!!!
+        comment.setUsersIdFK(usersRepository.findByLogin(login).get());
         commentRepository.save(comment);
     }
 

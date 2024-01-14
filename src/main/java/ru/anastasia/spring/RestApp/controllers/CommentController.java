@@ -3,8 +3,8 @@ package ru.anastasia.spring.RestApp.controllers;
 import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import ru.anastasia.spring.RestApp.dto.CommentDTO;
@@ -14,9 +14,11 @@ import ru.anastasia.spring.RestApp.exception.comment.CommentNotFoundException;
 import ru.anastasia.spring.RestApp.models.Comment;
 import ru.anastasia.spring.RestApp.services.CommentService;
 
+import java.security.Principal;
 import java.time.LocalDateTime;
 
 @RestController
+@RequestMapping("/comments")
 public class CommentController {
 
     private final CommentService commentService;
@@ -35,21 +37,27 @@ public class CommentController {
         return modelMapper.map(commentDTO, Comment.class);
     }
 
-    @GetMapping("/comment/{id}")
+    //Поиск комментария по id
+    @PreAuthorize("hasAnyRole('ADMIN','MODERATOR')")
+    @GetMapping("/{id}")
     public CommentDTO getComment (@PathVariable("id") Long id){
         return convertToCommentDTO(commentService.getCommentById(id));
     }
 
-    @DeleteMapping("/comment/{id}")
+    //Удаление комментария
+    @PreAuthorize("hasAnyRole('ADMIN','MODERATOR') or @commentService.getCommentById(#id).usersIdFK.login == authentication.name")
+    @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteComment(@PathVariable("id") Long id){
         commentService.deleteCommentById(id);
         return ResponseEntity.ok().body("Комментарий удален");
     }
 
-    @PostMapping("/comment/create/{id}")
+    //Создание комментария
+    @PostMapping("/{id}")
     public ResponseEntity<HttpStatus> createComment(@PathVariable("id") Long newsId,
                                                     @RequestBody @Valid CommentDTO commentDTO,
-                                                    BindingResult bindingResult){
+                                                    BindingResult bindingResult,
+                                                    Principal principal){
         if(bindingResult.hasErrors()){
             StringBuilder builder = new StringBuilder();
             bindingResult.getFieldErrors().forEach(n ->
@@ -62,11 +70,13 @@ public class CommentController {
         }
         commentDTO.setDate(LocalDateTime.now());
         modelMapper.getConfiguration().setAmbiguityIgnored(true);
-        commentService.saveComment(convertToComment(commentDTO),newsId);
+        commentService.saveComment(convertToComment(commentDTO),newsId,principal.getName());
         return ResponseEntity.ok(HttpStatus.OK);
     }
 
-    @PatchMapping("/comment/{id}")
+    //Редактирование комментария
+    @PreAuthorize("@commentService.getCommentById(#id).usersIdFK.login == authentication.name")
+    @PatchMapping("/{id}")
     public ResponseEntity<?> updateComment (@PathVariable("id") Long id,
                                             @RequestBody CommentDTO commentDTO){
         commentService.updateComment(id, commentDTO);

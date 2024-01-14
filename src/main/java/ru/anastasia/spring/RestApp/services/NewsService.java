@@ -3,9 +3,12 @@ package ru.anastasia.spring.RestApp.services;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 import ru.anastasia.spring.RestApp.dto.NewsDTO;
+import ru.anastasia.spring.RestApp.exception.user.UserNotFoundException;
 import ru.anastasia.spring.RestApp.models.News;
+import ru.anastasia.spring.RestApp.models.Users;
 import ru.anastasia.spring.RestApp.repositories.NewsRepository;
 import ru.anastasia.spring.RestApp.exception.news.NewsNotFoundException;
+import ru.anastasia.spring.RestApp.repositories.UsersRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -15,9 +18,11 @@ import java.util.List;
 public class NewsService {
 
     final NewsRepository newsRepository;
+    final UsersRepository usersRepository;
 
-    public NewsService(NewsRepository newsRepository) {
+    public NewsService(NewsRepository newsRepository, UsersRepository usersRepository) {
         this.newsRepository = newsRepository;
+        this.usersRepository = usersRepository;
     }
 
     public List<News> getAll(){
@@ -36,8 +41,9 @@ public class NewsService {
         return newsRepository.findByPublicationDateBetween(dateTime1, dateTime2);
     }
 
-    public void saveNews(News news) {
-        news.setUserIdFK(null); //!!!
+    public void saveNews(News news, String login) {
+        Users users = usersRepository.findByLogin(login).get();
+        news.setUserIdFK(users);
         newsRepository.save(news);
     }
 

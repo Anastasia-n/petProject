@@ -2,7 +2,6 @@ package ru.anastasia.spring.RestApp.dto;
 
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
-import org.springframework.data.annotation.Id;
 
 import java.time.LocalDateTime;
 
@@ -17,8 +16,17 @@ public class NewsDTO {
 
     private LocalDateTime publicationDate;
 
-
     private UsersDTO userIdFK;
+
+    private Long newsId;
+
+    public Long getNewsId() {
+        return newsId;
+    }
+
+    public void setNewsId(Long newsId) {
+        this.newsId = newsId;
+    }
 
     public String getTitle() {
         return title;

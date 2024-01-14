@@ -1,6 +1,5 @@
 package ru.anastasia.spring.RestApp.models;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotEmpty;
@@ -23,7 +22,7 @@ public class Users {
     private String login;
 
     @NotEmpty(message = "Пароль не должен быть пустым")
-    @Size(min = 5, max = 45)
+    @Size(min = 5, max = 255)
     @Column(name = "password")
     private String password;
 

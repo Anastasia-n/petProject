@@ -4,6 +4,10 @@ import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
@@ -15,12 +19,14 @@ import ru.anastasia.spring.RestApp.exception.news.NewsErrorResponse;
 import ru.anastasia.spring.RestApp.exception.news.NewsNotCreatedException;
 import ru.anastasia.spring.RestApp.exception.news.NewsNotFoundException;
 
+import java.security.Principal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
+@RequestMapping("/news")
 public class NewsController {
 
     private final NewsService newsService;
@@ -39,22 +45,27 @@ public class NewsController {
         return modelMapper.map(newsDTO, News.class);
     }
 
-    @GetMapping("/news")
+
+    //Получить список новостей
+    @GetMapping()
     public List<NewsDTO> getAllNews() {
         return newsService.getAll().stream().map(this::convertToNewsDTO).collect(Collectors.toList());
     }
 
-    @GetMapping("/news/{id}")
+    //Поиск новости по id
+    @GetMapping("/{id}")
     public NewsDTO getNewsById(@PathVariable("id") Long id) {
         return convertToNewsDTO(newsService.getById(id));
     }
 
-    @GetMapping("/news/find")
+    //Поиск новостей по ключевому слову
+    @GetMapping("/find")
     public List<NewsDTO> getNewsByKey(@RequestParam(value = "keyword") String keyword){
         return newsService.getByWord(keyword).stream().map(this::convertToNewsDTO).collect(Collectors.toList());
     }
 
-    @GetMapping("/news/date")
+    //Поиск новостей по дате
+    @GetMapping("/date")
     public List<NewsDTO> getNewsByDate (@RequestParam("fromDate") String date1,
                                        @RequestParam("toDate") String date2) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -62,9 +73,12 @@ public class NewsController {
                 .stream().map(this::convertToNewsDTO).collect(Collectors.toList());
     }
 
-    @PostMapping("/news/create")
+    //Добавление новости
+    @PreAuthorize("hasRole('MODERATOR')")
+    @PostMapping()
     public ResponseEntity<HttpStatus> createNews(@RequestBody @Valid NewsDTO newsDTO,
-                                                 BindingResult bindingResult){
+                                                 BindingResult bindingResult,
+                                                 Principal principal){
         if(bindingResult.hasErrors()){
             StringBuilder stringBuilder = new StringBuilder();
             List<FieldError> errors = bindingResult.getFieldErrors();
@@ -74,17 +88,20 @@ public class NewsController {
             throw new NewsNotCreatedException(stringBuilder.toString());
         }
         newsDTO.setPublicationDate(LocalDateTime.now());
-        newsService.saveNews(convertToNews(newsDTO));
+        newsService.saveNews(convertToNews(newsDTO), principal.getName());
         return ResponseEntity.ok(HttpStatus.OK);
     }
 
-    @DeleteMapping("/news/{id}")
+    //Удаление новости
+    @PreAuthorize("hasRole('ADMIN') or hasRole('MODERATOR')")
+    @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteNews(@PathVariable("id") Long id){
         newsService.deleteNews(id);
         return ResponseEntity.ok().body("Новость с id = " + id + " удалена");
     }
 
-    @GetMapping("/news/comments/{id}")
+    //Получение списка комментариев к новости по её id
+    @GetMapping("/comments/{id}")
     public List<CommentDTO> getCommentsByNewsId(@PathVariable("id") Long id) {
         return newsService.getById(id).getCommentList()
                 .stream()
@@ -92,7 +109,9 @@ public class NewsController {
                 .collect(Collectors.toList());
     }
 
-    @PatchMapping("/news/{id}")
+    //Редактирование новости
+    @PreAuthorize("hasRole('MODERATOR')")
+    @PatchMapping("/{id}")
     public ResponseEntity<?> updateNews (@PathVariable("id") Long id,
                                          @RequestBody NewsDTO newsDTO){
         newsService.updateNews(id, newsDTO);
