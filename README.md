@@ -1,4 +1,4 @@
-# PetProject
+# Pet-project
 # О проекте
 Язык программирования: **Java**  
   
